@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>物品与地域匹配系统</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- SheetJS 国内加速 CDN -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="layout">
+        <!-- 左侧栏 35% -->
+        <aside class="sidebar">
+            <!-- 工具栏 -->
+            <div class="toolbar">
+                <button id="uploadExcelBtn" class="upload-btn">📎 上传物品表</button>
+                <button id="uploadRegionBtn" class="upload-btn region-btn">🗺️ 上传地域表</button>
+                <button id="refreshFileListBtn" class="icon-btn" title="刷新">🔄</button>
+            </div>
+            <!-- 隐藏的文件输入框 -->
+            <input type="file" id="excelInput" accept=".xlsx, .xls, .xlsm, .csv" style="display: none;" />
+            <input type="file" id="regionInput" accept=".xlsx, .xls, .xlsm, .csv" style="display: none;" />
+
+            <!-- 已存储物品文件列表（用于删除） -->
+            <div class="stored-files-section">
+                <div class="section-label">📂 已存储物品文件</div>
+                <div id="fileListContainer" class="file-list compact">
+                    <div class="file-list-empty">暂无物品文件</div>
+                </div>
+            </div>
+
+            <!-- 已存储地域文件列表（用于删除） -->
+            <div class="stored-files-section">
+                <div class="section-label">🗂️ 已存储地域文件</div>
+                <div id="regionFileDeleteContainer" class="file-list compact">
+                    <div class="file-list-empty">暂无地域文件</div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 物品卡片网格区域 -->
+            <div class="card-list-section">
+                <div class="section-label" id="currentFileNameLabel">📇 全部物品 (0)</div>
+                <div id="cardListContainer" class="card-list">
+                    <div class="placeholder-text">请上传物品表</div>
+                </div>
+            </div>
+
+            <!-- 地名列表区域（网格） -->
+            <div class="region-list-section">
+                <div class="section-label">🗺️ 地名列表</div>
+                <div id="regionFileListContainer" class="region-file-list">
+                    <div class="placeholder-text">请上传地域表</div>
+                </div>
+            </div>
+
+            <!-- 状态栏 -->
+            <div class="status-card">
+                <span class="status-dot"></span>
+                <span class="status-text" id="statusText">就绪</span>
+            </div>
+        </aside>
+
+        <!-- 右侧详情面板 -->
+        <main class="detail-panel">
+            <div class="detail-header">
+                <h2>📋 详情面板</h2>
+                <span id="detailHint" class="detail-hint">点击物品卡片或地名查看详情</span>
+            </div>
+            <div id="detailContent" class="detail-content">
+                <div class="empty-detail">
+                    <div class="empty-icon">🖱️</div>
+                    <p>暂未选择任何项目</p>
+                    <small>点击物品卡片查看详情，点击地名查看地域属性</small>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
