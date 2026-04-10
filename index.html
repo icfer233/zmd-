@@ -22,19 +22,12 @@
             <input type="file" id="excelInput" accept=".xlsx, .xls, .xlsm, .csv" style="display: none;" />
             <input type="file" id="regionInput" accept=".xlsx, .xls, .xlsm, .csv" style="display: none;" />
 
-            <!-- 已存储物品文件列表（用于删除） -->
-            <div class="stored-files-section">
-                <div class="section-label">📂 已存储物品文件</div>
-                <div id="fileListContainer" class="file-list compact">
-                    <div class="file-list-empty">暂无物品文件</div>
+            <div class="file-lists-row">
+                <div class="stored-files-section half">
+                    <div id="fileListContainer" class="file-list compact">...</div>
                 </div>
-            </div>
-
-            <!-- 已存储地域文件列表（用于删除） -->
-            <div class="stored-files-section">
-                <div class="section-label">🗂️ 已存储地域文件</div>
-                <div id="regionFileDeleteContainer" class="file-list compact">
-                    <div class="file-list-empty">暂无地域文件</div>
+                <div class="stored-files-section half">
+                    <div id="regionFileDeleteContainer" class="file-list compact">...</div>
                 </div>
             </div>
 
