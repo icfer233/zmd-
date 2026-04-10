@@ -484,18 +484,21 @@ function showItemDetail(item) {
         coverageMap[regionName] = computeBestCoverageForRegion(regionName, item);
     }
 
+    // 开始构建详情HTML
     let detailsHtml = `
         <div class="detail-card">
             <div class="detail-image">
                 ${validUrl ? `<img src="${escapeHtml(imageUrl)}" alt="图片" onerror="this.onerror=null; this.src='';">` : '<div style="background:#f1f5f9; padding:30px; text-align:center;">📷 无图片</div>'}
             </div>
     `;
-    // 显示所有属性（跳过第一列图片URL）
+
+    // 显示所有属性（跳过第一列图片URL，并过滤空列）
     for (let i = 1; i < keys.length; i++) {
         const key = keys[i];
-    // 跳过空列（如 _EMPTY, _EMPTY_1 等）
         if (key.startsWith('_EMPTY')) continue;
         let value = row[key] !== undefined && row[key] !== null ? String(row[key]) : '';
+        // 如果值为空，跳过这一行（避免显示空字段）
+        if (value === '') continue;
         detailsHtml += `
             <div class="detail-field">
                 <div class="field-label">${escapeHtml(key)}</div>
@@ -505,7 +508,6 @@ function showItemDetail(item) {
     }
 
     // 显示匹配的地域及最优覆盖建议
-    if (matchedRegions.length > 0) {
     if (matchedRegions.length > 0) {
         detailsHtml += `
             <div class="detail-field" style="margin-top: 12px; border-top: 2px solid #e9edf2; padding-top: 12px;">
@@ -518,7 +520,7 @@ function showItemDetail(item) {
         for (const regionName of matchedRegions) {
             const bestList = coverageMap[regionName];
             if (bestList && bestList.length > 0) {
-            // 过滤掉覆盖数量为1的方案
+                // 过滤掉覆盖数量为1的方案
                 const filteredBestList = bestList.filter(best => best.count >= 2);
                 if (filteredBestList.length === 0) {
                     detailsHtml += `
@@ -531,28 +533,28 @@ function showItemDetail(item) {
                 }
                 for (let idx = 0; idx < filteredBestList.length; idx++) {
                     const best = filteredBestList[idx];
-                    let itemsHtml = `<div style="margin-bottom: 16px; border-left: 3px solid #10b981; padding-left: 10px;">
-                        <div><strong>${escapeHtml(regionName)}${filteredBestList.length > 1 ? ` 方案 ${idx+1}` : ''}</strong></div>
-                        <div style="font-size: 0.75rem; color: #475569; margin: 4px 0 8px 0;">
-                            主属性选：${best.mainSelected.join('、')} &nbsp;|&nbsp;
-                            锁定附加/技能属性：${escapeHtml(best.lockValue)}<br>
-                            ✅ 可覆盖 <strong>${best.count}</strong> 个物品
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; max-height: 300px; overflow-y: auto; padding: 4px;">
+                    detailsHtml += `
+                        <div style="margin-bottom: 16px; border-left: 3px solid #10b981; padding-left: 10px;">
+                            <div><strong>${escapeHtml(regionName)}${filteredBestList.length > 1 ? ` 方案 ${idx+1}` : ''}</strong></div>
+                            <div style="font-size: 0.75rem; color: #475569; margin: 4px 0 8px 0;">
+                                主属性选：${best.mainSelected.join('、')} &nbsp;|&nbsp;
+                                锁定附加/技能属性：${escapeHtml(best.lockValue)}<br>
+                                ✅ 可覆盖 <strong>${best.count}</strong> 个物品
+                            </div>
+                            <div class="covered-items-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; max-height: 300px; overflow-y: auto; padding: 4px;">
                     `;
-                    for (const item of best.coveredItems) {
-                        const validUrl = item.imageUrl && (item.imageUrl.startsWith('http') || item.imageUrl.startsWith('data:image'));
-                        itemsHtml += `
-                            <div style="text-align: center;">
+                    for (const coveredItem of best.coveredItems) {
+                        const validCoveredUrl = coveredItem.imageUrl && (coveredItem.imageUrl.startsWith('http') || coveredItem.imageUrl.startsWith('data:image'));
+                        detailsHtml += `
+                            <div class="covered-item-card" data-item-name="${escapeHtml(coveredItem.name)}" data-file-id="${coveredItem.fileId}" style="text-align: center; cursor: pointer;">
                                 <div style="width: 64px; height: 64px; margin: 0 auto; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
-                                    ${validUrl ? `<img src="${escapeHtml(item.imageUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '📷'}
+                                    ${validCoveredUrl ? `<img src="${escapeHtml(coveredItem.imageUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '📷'}
                                 </div>
-                                <div style="font-size: 0.65rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.name)}</div>
+                                <div style="font-size: 0.65rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(coveredItem.name)}</div>
                             </div>
                         `;
                     }
-                    itemsHtml += `</div></div>`;
-                    detailsHtml += itemsHtml;
+                    detailsHtml += `</div></div>`;
                 }
             } else {
                 detailsHtml += `
@@ -564,28 +566,99 @@ function showItemDetail(item) {
             }
         }
         detailsHtml += `</div>`;
-
     } else {
-            detailsHtml += `
-                <div class="detail-field" style="margin-top: 12px; border-top: 2px solid #e9edf2; padding-top: 12px;">
-                    <div class="field-label" style="color: #94a3b8;">🏷️ 完全包含该物品属性的地域</div>
-                    <div class="field-value">无</div>
-                </div>
-            `;
-        }
-        detailsHtml += `</div>`;
-        document.getElementById('detailContent').innerHTML = detailsHtml;
-        document.getElementById('detailHint').innerText = `当前查看: ${item.name} (来自 ${item.fileName})`;
+        detailsHtml += `
+            <div class="detail-field" style="margin-top: 12px; border-top: 2px solid #e9edf2; padding-top: 12px;">
+                <div class="field-label" style="color: #94a3b8;">🏷️ 完全包含该物品属性的地域</div>
+                <div class="field-value">无</div>
+            </div>
+        `;
     }
-// 绑定查看物品按钮事件
-    document.querySelectorAll('.view-covered-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const regionName = btn.getAttribute('data-region');
-            const best = coverageMap[regionName];
-            if (best && best.coveredItems && best.coveredItems.length) {
-                showCoveredItemsModal(best.coveredItems, `覆盖物品 (${regionName})`);
+    detailsHtml += `</div>`;  // 关闭 detail-card
+
+    document.getElementById('detailContent').innerHTML = detailsHtml;
+    document.getElementById('detailHint').innerText = `当前查看: ${item.name} (来自 ${item.fileName})`;
+
+    // 为所有动态生成的覆盖物品卡片绑定浮窗和点击事件
+    setTimeout(() => {
+        const cards = document.querySelectorAll('.covered-item-card');
+        cards.forEach(card => {
+            const itemName = card.getAttribute('data-item-name');
+            const fileId = parseInt(card.getAttribute('data-file-id'));
+            const matchedItem = allItemsCache.find(i => i.name === itemName && i.fileId === fileId);
+            if (matchedItem) {
+                bindTooltipToCard(card, matchedItem);
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showItemDetail(matchedItem);
+                    const leftCard = document.querySelector(`.list-card[data-index="${allItemsCache.indexOf(matchedItem)}"]`);
+                    if (leftCard) {
+                        document.querySelectorAll('.list-card').forEach(c => c.classList.remove('active'));
+                        leftCard.classList.add('active');
+                    }
+                });
             }
         });
+    }, 50);
+}
+
+// ==================== 浮窗功能（全局统一） ====================
+let currentTooltip = null;
+
+function showItemTooltip(item, event) {
+    if (currentTooltip) currentTooltip.remove();
+    const div = document.createElement('div');
+    div.className = 'item-tooltip';
+    const imageHtml = (item.imageUrl && (item.imageUrl.startsWith('http') || item.imageUrl.startsWith('data:image')))
+        ? `<img src="${escapeHtml(item.imageUrl)}" alt="">`
+        : `<div style="width:48px;height:48px;background:#f1f5f9;border-radius:12px;display:flex;align-items:center;justify-content:center;">📷</div>`;
+    div.innerHTML = `
+        <div class="tooltip-header">
+            ${imageHtml}
+            <div>
+                <div class="tooltip-name">${escapeHtml(item.name)}</div>
+                <div class="tooltip-main">⭐ 主属性：${escapeHtml(item.mainAttr || '无')}</div>
+            </div>
+        </div>
+        <div class="tooltip-attr">
+            <strong>附加属性</strong>：${(item.extraAttrs || []).join('、') || '无'}
+        </div>
+        <div class="tooltip-attr">
+            <strong>技能属性</strong>：${(item.skillAttrs || []).join('、') || '无'}
+        </div>
+    `;
+    document.body.appendChild(div);
+    currentTooltip = div;
+    // 定位在鼠标右下方
+    div.style.left = (event.clientX + 15) + 'px';
+    div.style.top = (event.clientY + 15) + 'px';
+}
+
+function hideTooltip() {
+    if (currentTooltip) {
+        currentTooltip.remove();
+        currentTooltip = null;
+    }
+}
+
+// 为任意容器内的 .item-card 类绑定浮窗（注意：我们的卡片类为 .list-card，但覆盖物品网格中的卡片类需要统一）
+// 为了通用，我们编写一个函数，给任何带有 data-item-index 或 data-item 的元素绑定
+function bindTooltipToCard(cardElement, itemData) {
+    if (!cardElement || !itemData) return;
+    cardElement.addEventListener('mouseenter', (e) => {
+        showItemTooltip(itemData, e);
+    });
+    cardElement.addEventListener('mouseleave', hideTooltip);
+}
+
+// 批量绑定（用于动态生成的卡片列表）
+function bindTooltipToCards(containerSelector, itemDataArray, cardSelector = '.list-card') {
+    const container = document.querySelector(containerSelector);
+    if (!container) return;
+    const cards = container.querySelectorAll(cardSelector);
+    cards.forEach((card, idx) => {
+        const item = itemDataArray[idx];
+        if (item) bindTooltipToCard(card, item);
     });
 }
 
@@ -646,24 +719,77 @@ async function refreshAllRegions() {
 function showRegionDetail(regionName) {
     if (!allRegionsCache[regionName]) return;
     const data = allRegionsCache[regionName];
+
+    let regionAttrs = [];
+    let regionSkills = [];
+    for (const [catName, attrs] of Object.entries(data)) {
+        if (catName.includes('附加属性')) regionAttrs = attrs.map(a => String(a).trim());
+        if (catName.includes('技能属性')) regionSkills = attrs.map(a => String(a).trim());
+    }
+
+    const matchedItems = [];
+    for (const item of allItemsCache) {
+        const itemAttrs = item.extraAttrs || [];
+        const itemSkills = item.skillAttrs || [];
+        const attrsOk = itemAttrs.length === 0 || itemAttrs.every(attr => regionAttrs.includes(attr));
+        const skillsOk = itemSkills.length === 0 || itemSkills.every(skill => regionSkills.includes(skill));
+        if (attrsOk && skillsOk) matchedItems.push(item);
+    }
+
     let html = `<div class="region-detail-card"><div class="region-detail-title">📍 ${escapeHtml(regionName)}</div>`;
     for (let [category, attrs] of Object.entries(data)) {
         if (attrs && attrs.length) {
-            html += `
-                <div class="category-block">
-                    <div class="category-title">${escapeHtml(category)}</div>
-                    <div class="attribute-list">
-                        ${attrs.map(attr => `<span class="attribute-tag">${escapeHtml(attr)}</span>`).join('')}
-                    </div>
-                </div>
-            `;
+            html += `<div class="category-block"><div class="category-title">${escapeHtml(category)}</div><div class="attribute-list">${attrs.map(attr => `<span class="attribute-tag">${escapeHtml(attr)}</span>`).join('')}</div></div>`;
         }
     }
     html += `</div>`;
+
+    if (matchedItems.length > 0) {
+        html += `<div style="margin-top: 20px; background: #f0fdf4; border-radius: 16px; padding: 12px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">📦 该地域包含的物品 (${matchedItems.length})</div>
+            <div id="regionItemsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; max-height: 300px; overflow-y: auto; padding: 4px;">`;
+        for (let idx = 0; idx < matchedItems.length; idx++) {
+            const item = matchedItems[idx];
+            const validUrl = item.imageUrl && (item.imageUrl.startsWith('http') || item.imageUrl.startsWith('data:image'));
+            html += `
+                <div class="region-item-card" data-item-index="${idx}" style="text-align: center; cursor: pointer;">
+                    <div style="width: 64px; height: 64px; margin: 0 auto; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                        ${validUrl ? `<img src="${escapeHtml(item.imageUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '📷'}
+                    </div>
+                    <div style="font-size: 0.65rem; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.name)}</div>
+                </div>
+            `;
+        }
+        html += `</div></div>`;
+    } else {
+        html += `<div style="margin-top: 20px; background: #f1f5f9; border-radius: 16px; padding: 12px; text-align: center; color: #64748b;">📦 该地域暂无包含任何物品</div>`;
+    }
+
     document.getElementById('detailContent').innerHTML = html;
     document.getElementById('detailHint').innerText = `当前查看: ${regionName}`;
-}
 
+    // 为地域物品网格中的每个卡片绑定浮窗和点击事件
+    const regionItemsContainer = document.getElementById('regionItemsGrid');
+    if (regionItemsContainer) {
+        const cards = regionItemsContainer.querySelectorAll('.region-item-card');
+        cards.forEach((card, idx) => {
+            const item = matchedItems[idx];
+            if (item) {
+                bindTooltipToCard(card, item);
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showItemDetail(item);
+                    // 高亮左侧对应的卡片（可选）
+                    const leftCard = document.querySelector(`.list-card[data-index="${allItemsCache.indexOf(item)}"]`);
+                    if (leftCard) {
+                        document.querySelectorAll('.list-card').forEach(c => c.classList.remove('active'));
+                        leftCard.classList.add('active');
+                    }
+                });
+            }
+        });
+    }
+}
 // ==================== 文件删除列表管理 ====================
 async function refreshFileLists() {
     // 物品文件列表
