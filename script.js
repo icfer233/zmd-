@@ -288,6 +288,10 @@ async function refreshAllItems() {
         console.error('refreshAllItems error:', err);
         container.innerHTML = '<div class="placeholder-text">加载失败，请检查控制台</div>';
     }
+    // 在 refreshAllItems 函数末尾（更新完 allItemsCache 后）
+    if (currentFilterMode) {
+        renderFilterView();
+    }
 }
 // 获取所有可能的主属性组合（5选3）
 function getAllMainAttrCombinations() {
@@ -577,7 +581,8 @@ function showItemDetail(item) {
     detailsHtml += `</div>`;  // 关闭 detail-card
 
     document.getElementById('detailContent').innerHTML = detailsHtml;
-    document.getElementById('detailHint').innerText = `当前查看: ${item.name} (来自 ${item.fileName})`;
+    document.getElementById('detailHint').innerText = ``;
+    //当前查看: ${item.name} (来自 ${item.fileName})，原上``内容，现删除
 
     // 为所有动态生成的覆盖物品卡片绑定浮窗和点击事件
     setTimeout(() => {
@@ -926,6 +931,12 @@ function updateStatus(msg) {
     await refreshAllItems();
     await refreshAllRegions();
     updateStatus('就绪，可上传物品表或地域表');
+    // 初始加载筛选器（等待物品数据加载完成）
+    setTimeout(() => {
+        if (allItemsCache.length > 0 || true) {
+            renderFilterView();
+        }
+    }, 100);
     
     // 绑定上传按钮
     const uploadItemBtn = document.getElementById('uploadExcelBtn');
@@ -965,3 +976,165 @@ function updateStatus(msg) {
         updateStatus('已刷新');
     };
 })();
+// ==================== 筛选功能 ====================
+let currentFilterMode = false;      // 是否处于筛选模式
+let currentFilter = {
+    mainAttr: null,      // 选中的主属性
+    extraAttr: null,     // 选中的附加属性
+    skillAttr: null      // 选中的技能属性
+};
+
+// 获取所有可用的属性值
+function getAllAttributeValues() {
+    const mainAttrs = new Set();
+    const extraAttrs = new Set();
+    const skillAttrs = new Set();
+    
+    for (const item of allItemsCache) {
+        if (item.mainAttr) mainAttrs.add(item.mainAttr);
+        if (item.extraAttrs) item.extraAttrs.forEach(a => extraAttrs.add(a));
+        if (item.skillAttrs) item.skillAttrs.forEach(s => skillAttrs.add(s));
+    }
+    
+    return {
+        mainAttrs: Array.from(mainAttrs).sort(),
+        extraAttrs: Array.from(extraAttrs).sort(),
+        skillAttrs: Array.from(skillAttrs).sort()
+    };
+}
+
+// 根据筛选条件过滤物品
+function filterItems() {
+    let filtered = [...allItemsCache];
+    
+    if (currentFilter.mainAttr) {
+        filtered = filtered.filter(item => item.mainAttr === currentFilter.mainAttr);
+    }
+    if (currentFilter.extraAttr) {
+        filtered = filtered.filter(item => item.extraAttrs && item.extraAttrs.includes(currentFilter.extraAttr));
+    }
+    if (currentFilter.skillAttr) {
+        filtered = filtered.filter(item => item.skillAttrs && item.skillAttrs.includes(currentFilter.skillAttr));
+    }
+    
+    return filtered;
+}
+
+// 渲染筛选器界面
+function renderFilterView() {
+    const attrs = getAllAttributeValues();
+    const filteredItems = filterItems();
+    
+    let html = `
+        <div class="filter-section">
+            <div class="filter-title">🏷️ 主属性</div>
+            <div class="filter-buttons">
+                <button class="filter-btn ${!currentFilter.mainAttr ? 'active' : ''}" data-type="main" data-value="">全部</button>
+                ${attrs.mainAttrs.map(attr => `
+                    <button class="filter-btn ${currentFilter.mainAttr === attr ? 'active' : ''}" data-type="main" data-value="${escapeHtml(attr)}">${escapeHtml(attr)}</button>
+                `).join('')}
+            </div>
+        </div>
+        <div class="filter-section">
+            <div class="filter-title">⚡ 附加属性</div>
+            <div class="filter-buttons">
+                <button class="filter-btn ${!currentFilter.extraAttr ? 'active' : ''}" data-type="extra" data-value="">全部</button>
+                ${attrs.extraAttrs.map(attr => `
+                    <button class="filter-btn ${currentFilter.extraAttr === attr ? 'active' : ''}" data-type="extra" data-value="${escapeHtml(attr)}">${escapeHtml(attr)}</button>
+                `).join('')}
+            </div>
+        </div>
+        <div class="filter-section">
+            <div class="filter-title">🌀 技能属性</div>
+            <div class="filter-buttons">
+                <button class="filter-btn ${!currentFilter.skillAttr ? 'active' : ''}" data-type="skill" data-value="">全部</button>
+                ${attrs.skillAttrs.map(attr => `
+                    <button class="filter-btn ${currentFilter.skillAttr === attr ? 'active' : ''}" data-type="skill" data-value="${escapeHtml(attr)}">${escapeHtml(attr)}</button>
+                `).join('')}
+            </div>
+        </div>
+        <div class="filter-result-stats">
+            📊 找到 ${filteredItems.length} 个物品
+        </div>
+        <div class="card-grid" id="filterResultGrid">
+            ${renderFilterResultGrid(filteredItems)}
+        </div>
+    `;
+    
+    document.getElementById('detailContent').innerHTML = html;
+    document.getElementById('detailHeader').querySelector('h2').innerText = '🔍 筛选器';
+    document.getElementById('detailHint').innerText = `筛选结果: ${filteredItems.length} 个物品`;
+    document.getElementById('backToFilterBtn').style.display = 'none';
+    currentFilterMode = true;
+    
+    // 绑定筛选按钮事件
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const type = btn.getAttribute('data-type');
+            const value = btn.getAttribute('data-value') || null;
+            
+            if (type === 'main') currentFilter.mainAttr = value;
+            else if (type === 'extra') currentFilter.extraAttr = value;
+            else if (type === 'skill') currentFilter.skillAttr = value;
+            
+            renderFilterView();  // 重新渲染筛选界面
+        });
+    });
+    
+    // 绑定结果卡片点击事件
+    document.querySelectorAll('.filter-result-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const idx = parseInt(card.getAttribute('data-index'));
+            const item = filteredItems[idx];
+            if (item) {
+                showItemDetail(item);
+                currentFilterMode = false;
+                document.getElementById('backToFilterBtn').style.display = 'inline-block';
+                document.getElementById('detailHeader').querySelector('h2').innerText = '📋 物品详情';
+                document.getElementById('detailHint').innerText = `当前查看: ${item.name}`;
+            }
+        });
+    });
+}
+
+// 渲染筛选结果网格
+function renderFilterResultGrid(items) {
+    if (items.length === 0) {
+        return '<div class="placeholder-text">暂无符合条件的物品</div>';
+    }
+    
+    let html = '';
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const validUrl = item.imageUrl && (item.imageUrl.startsWith('http') || item.imageUrl.startsWith('data:image'));
+        html += `
+            <div class="filter-result-card" data-index="${i}" style="background: #ffffff; border: 1px solid #e9edf2; border-radius: 12px; padding: 8px 4px 6px; cursor: pointer; text-align: center;">
+                <div class="list-card-img" style="width: 64px; height: 64px; margin: 0 auto; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                    ${validUrl ? `<img src="${escapeHtml(item.imageUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '📷'}
+                </div>
+                <div style="font-weight: 500; font-size: 0.7rem; margin-top: 6px;">${escapeHtml(item.name)}</div>
+                <div style="font-size: 0.6rem; color: #64748b;">⭐ ${escapeHtml(item.mainAttr || '无')}</div>
+            </div>
+        `;
+    }
+    return `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px;">${html}</div>`;
+}
+
+// 返回筛选界面
+function backToFilter() {
+    renderFilterView();
+}
+
+// 修改原有的 showItemDetail，添加返回按钮显示逻辑
+const originalShowItemDetail = showItemDetail;
+window.showItemDetail = function(item) {
+    originalShowItemDetail(item);
+    currentFilterMode = false;
+    const backBtn = document.getElementById('backToFilterBtn');
+    if (backBtn) {
+        backBtn.style.display = 'inline-flex';  // 改为 inline-flex 以适配 flex 布局
+        backBtn.onclick = () => backToFilter();
+    }
+    document.getElementById('detailHeader').querySelector('h2').innerText = '📋 物品详情';
+    document.getElementById('detailHint').innerText = `当前查看: ${item.name}`;
+};
