@@ -1056,7 +1056,7 @@ function renderFilterView() {
         <div class="filter-result-stats">
             📊 找到 ${filteredItems.length} 个物品
         </div>
-        <div class="card-grid" id="filterResultGrid">
+        <div id="filterResultContainer">
             ${renderFilterResultGrid(filteredItems)}
         </div>
     `;
@@ -1064,6 +1064,7 @@ function renderFilterView() {
     document.getElementById('detailContent').innerHTML = html;
     document.getElementById('detailHeader').querySelector('h2').innerText = '🔍 筛选器';
     document.getElementById('detailHint').innerText = `筛选结果: ${filteredItems.length} 个物品`;
+    document.getElementById('detailHint').style.display = 'inline-block';
     document.getElementById('backToFilterBtn').style.display = 'none';
     currentFilterMode = true;
     
@@ -1077,23 +1078,31 @@ function renderFilterView() {
             else if (type === 'extra') currentFilter.extraAttr = value;
             else if (type === 'skill') currentFilter.skillAttr = value;
             
-            renderFilterView();  // 重新渲染筛选界面
+            renderFilterView();
         });
     });
     
-    // 绑定结果卡片点击事件
+    // 绑定结果卡片点击事件和浮窗
     document.querySelectorAll('.filter-result-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const idx = parseInt(card.getAttribute('data-index'));
-            const item = filteredItems[idx];
-            if (item) {
+        const idx = parseInt(card.getAttribute('data-index'));
+        const item = filteredItems[idx];
+        if (item) {
+            // 绑定浮窗
+            bindTooltipToCard(card, item);
+            // 绑定点击事件
+            card.addEventListener('click', (e) => {
+                e.stopPropagation();
                 showItemDetail(item);
                 currentFilterMode = false;
-                document.getElementById('backToFilterBtn').style.display = 'inline-block';
+                const backBtn = document.getElementById('backToFilterBtn');
+                if (backBtn) {
+                    backBtn.style.display = 'inline-flex';
+                    backBtn.onclick = () => backToFilter();
+                }
                 document.getElementById('detailHeader').querySelector('h2').innerText = '📋 物品详情';
-                document.getElementById('detailHint').innerText = `当前查看: ${item.name}`;
-            }
-        });
+                document.getElementById('detailHint').innerText = '';
+            });
+        }
     });
 }
 
