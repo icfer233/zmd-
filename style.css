@@ -507,3 +507,95 @@ body {
     border-radius: 12px;
     padding: 6px;
 }
+/* 筛选器样式 */
+.filter-section {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #eef2f6;
+    padding-bottom: 12px;
+}
+.filter-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+.filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.filter-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: 0.1s;
+}
+.filter-btn:hover {
+    background: #e2e8f0;
+}
+.filter-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+.filter-result-stats {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin: 12px 0;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-radius: 30px;
+    display: inline-block;
+}
+/* 返回筛选按钮 - 优化样式 */
+.back-to-filter {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 40px;
+    padding: 6px 16px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.back-to-filter:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+    transform: translateX(-2px);
+}
+
+.back-to-filter:active {
+    transform: translateX(0px);
+}
+
+/* 详情头部布局优化 */
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.detail-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.detail-header .detail-hint {
+    flex: 1;
+    margin-left: 12px;
+}
+/*隐藏当前查看等文字*/
+.detail-hint {
+    display: none !important;
+}
