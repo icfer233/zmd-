@@ -58,17 +58,14 @@
 
         <!-- 右侧详情面板 -->
         <main class="detail-panel">
-            <div class="detail-header">
-                <h2>📋 详情面板</h2>
-                <span id="detailHint" class="detail-hint">点击物品卡片或地名查看详情</span>
+            <div class="detail-header" id="detailHeader">
+                <h2>📋 筛选器</h2>
+                <span id="detailHint" class="detail-hint">点击属性筛选物品</span>
+                <button id="backToFilterBtn" class="back-to-filter" style="display: none;">
+                    ← 返回筛选
+                </button>
             </div>
-            <div id="detailContent" class="detail-content">
-                <div class="empty-detail">
-                    <div class="empty-icon">🖱️</div>
-                    <p>暂未选择任何项目</p>
-                    <small>点击物品卡片查看详情，点击地名查看地域属性</small>
-                </div>
-            </div>
+            <div id="detailContent" class="detail-content"></div>
         </main>
     </div>
     <script src="script.js"></script>
